@@ -1,5 +1,12 @@
-// 2013/5/15
-// mini selector engine —— wink
+/**
+ * Mini CSS Selector Engine —— wink
+ * Copyright (c) 2013 lichen(http://leechan.me/)
+ * -------------------------------------------------------
+ * Dual licensed under the MIT and GPL licenses.
+ *    - http://www.opensource.org/licenses/mit-license.php
+ *    - http://www.gnu.org/copyleft/gpl.html
+ * -------------------------------------------------------
+ */
 (function() {
 	var simpleSeletor = /^[#\.\w][\w-]+$/,
 		idStripper = /#([\w\-_]+)/,
@@ -16,8 +23,8 @@
 			selector = selector.replace(/^\s+|\s+$/g, '');
 			if(simpleSeletor.test(selector)) {
 				var firstChar = selector.charAt(0),
-					flag = firstChar === '#' ? 'id' : firstChar === '.' ? 'class' : 'tag';
-				return find(flag, selector, context);
+					type = firstChar === '#' ? 'id' : firstChar === '.' ? 'class' : 'tag';
+				return find(type, selector, context);
 			}
 
 			if(context.querySelectorAll) {
