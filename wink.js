@@ -6,8 +6,8 @@
  *    - http://www.opensource.org/licenses/mit-license.php
  *    - http://www.gnu.org/copyleft/gpl.html
  * -------------------------------------------------------
- */
-;(function() {
+ */;
+(function() {
 	var simpleSeletor = /^[#\.\w][\w-]+$/,
 		idStripper = /#([\w\-_]+)/,
 		classStripper = /\.([\w\-_]+)/,
@@ -15,25 +15,25 @@
 		attrStripper = /\[([\w-]+)=[\"\']?([^\']+)[\"\']?\]$/;
 
 	function _(selector, context) {
-		if(!selector) return [];
+		if (!selector) return [];
 
-		if(typeof selector === 'string') {
+		if (typeof selector === 'string') {
 			context = context || document;
 			selector = selector.replace(/^\s+|\s+$/g, '');
-			if(simpleSeletor.test(selector)) {
+			if (simpleSeletor.test(selector)) {
 				var firstChar = selector.charAt(0),
 					type = firstChar === '#' ? 'id' : firstChar === '.' ? 'class' : 'tag';
 				return find(type, selector, context);
 			}
 
-			if(context.querySelectorAll) {
-				return toArray(context.querySelectorAll(selector));
-			}
+			// if(context.querySelectorAll) {
+			// 	return toArray(context.querySelectorAll(selector));
+			// }
 
-			if(selector.indexOf(',') !== -1) {
+			if (selector.indexOf(',') !== -1) {
 				var selectors = selector.split(','),
 					ret = [];
-				for(var i = 0, len = selectors.length; i < len; i++) {
+				for (var i = 0, len = selectors.length; i < len; i++) {
 					ret = ret.concat(_(selectors[i]));
 				}
 				return unique(ret);
@@ -60,14 +60,14 @@
 			}) : elements) : (attrs.length ? (filter(find('tag', '*', context), attrs, function(attrs) {
 				return this.getAttribute(attrs[1]) === attrs[2];
 			})) : []);
-	
-			if(split.length) {
+
+			if (split.length) {
 				return filterByParent(split, elements);
 			}
 			return elements;
 		}
 
-		if(selector.nodeType) {
+		if (selector.nodeType) {
 			return [selector];
 		}
 
@@ -76,19 +76,19 @@
 
 	function find(type, value, context) {
 		var found = [];
-		switch(type) {
+		switch (type) {
 			case 'id':
 				el = document.getElementById(value);
 				el && found.push(el);
 				break;
 			case 'class':
-				if(context.getElementsByClassName) {
+				if (context.getElementsByClassName) {
 					found = toArray(context.getElementsByClassName(value));
 				} else {
 					var all = context.all || context.getElementsByTagName('*');
-					for(var i = 0, len = all.length; i < len; i++) {
+					for (var i = 0, len = all.length; i < len; i++) {
 						var className = all[i].className;
-						if(className && RegExp('\\s*' + value + '\\s*', 'g').test(className)) {
+						if (className && RegExp('\\s*' + value + '\\s*', 'g').test(className)) {
 							found.push(all[i]);
 						}
 					}
@@ -102,14 +102,14 @@
 
 	function toArray(c) {
 		try {
-            return Array.prototype.slice.call(c);
-        } catch(e) {
-            var ret = [];
-            for (var i = 0, len = c.length; i < len; ++i) {
-                ret.push(c[i]);
-            }
-            return ret;
-        }
+			return Array.prototype.slice.call(c);
+		} catch (e) {
+			var ret = [];
+			for (var i = 0, len = c.length; i < len; ++i) {
+				ret.push(c[i]);
+			}
+			return ret;
+		}
 	}
 
 	function stripper(selector) {
@@ -122,9 +122,9 @@
 	}
 
 	function filter(collection, value, fnTest) {
-		var ret= [];
-		for(var i = 0, len = collection.length; i < len; i++) {
-			if(fnTest.call(collection[i], value)) {
+		var ret = [];
+		for (var i = 0, len = collection.length; i < len; i++) {
+			if (fnTest.call(collection[i], value)) {
 				ret.push(collection[i]);
 			}
 		}
@@ -134,39 +134,39 @@
 	function filterByParent(selector, elements, deep) {
 		var s = selector.pop(),
 			ret = [];
-		if(s === '>') {
-			return filterByParent(selector, elements, true);
+		if (s === '>') {
+			deep = deep || elements;
+			return filterByParent([selector.pop()], deep, true);
 		}
 		var strippedSelector = stripper(s),
 			id = strippedSelector.id,
 			className = strippedSelector.className,
 			tagName = strippedSelector.tagName,
 			attrs = strippedSelector.attrs;
-
-		for(var i = 0, len = elements.length; i < len; i++) {
+		for (var i = 0, len = elements.length; i < len; i++) {
 			var parent = elements[i].parentNode;
-            do {
-                var isMatch = !id || (parent.id === id);
-                isMatch = isMatch && (!tagName || tagName === parent.nodeName.toLowerCase());
-                isMatch = isMatch && (!className || (RegExp('(^|\\s)' + className + '(\\s|$)').test(parent.className)));
-                isMatch = isMatch && (!attrs.length || parent.getAttribute(attrs[1]) === attrs[2]);
-                if(deep || isMatch) {
-                	if(isMatch) {
-                		ret.push(elements[i]);
-                	}
-                	break;
-                }
-                
-            } while ((parent = parent.parentNode))
+			do {
+				var isMatch = !id || (parent.id === id);
+				isMatch = isMatch && (!tagName || tagName === parent.nodeName.toLowerCase());
+				isMatch = isMatch && (!className || (RegExp('(^|\\s)' + className + '(\\s|$)').test(parent.className)));
+				isMatch = isMatch && (!attrs.length || parent.getAttribute(attrs[1]) === attrs[2]);
+				if (deep || isMatch) {
+					if (isMatch) {
+						ret.push(elements[i]);
+					}
+					break;
+				}
+
+			} while ((parent = parent.parentNode))
 		}
 		return selector.length > 0 ? filterByParent(selector, ret) : ret;
 	}
 
 	function unique(arr) {
 		var ret = arr.concat();
-		for(var i = 0; i < ret.length; i++) {
-			for(var j = i + 1; j < ret.length; j++) {
-				if(ret[j] === ret[i]) {
+		for (var i = 0; i < ret.length; i++) {
+			for (var j = i + 1; j < ret.length; j++) {
+				if (ret[j] === ret[i]) {
 					ret.splice(j, 1);
 					j--;
 				}
