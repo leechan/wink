@@ -1,5 +1,5 @@
 /**
- * Mini CSS Selector Engine —— wink
+ * A Tiny CSS Selector Engine —— wink
  * Copyright (c) 2013 lichen(http://leechan.me/)
  * -------------------------------------------------------
  * Dual licensed under the MIT and GPL licenses.
@@ -7,13 +7,12 @@
  *    - http://www.gnu.org/copyleft/gpl.html
  * -------------------------------------------------------
  */
-(function() {
+;(function() {
 	var simpleSeletor = /^[#\.\w][\w-]+$/,
 		idStripper = /#([\w\-_]+)/,
 		classStripper = /\.([\w\-_]+)/,
-		tagStripper = /^([\w\-_]+)/,
-		attrStripper = /\[([\w-]+)=[\"\']?([^\']+)[\"\']?\]$/,
-		seletorSplitter = /\S+/g;
+		tagStripper = /^([\w\-_\*]+)/,
+		attrStripper = /\[([\w-]+)=[\"\']?([^\']+)[\"\']?\]$/;
 
 	function _(selector, context) {
 		if(!selector) return [];
@@ -40,14 +39,14 @@
 				return unique(ret);
 			}
 
-			var split = selector.match(seletorSplitter),
+			var split = selector.match(/\S+/g),
 				lastSelector = split.pop(),
-				elements = [];
-
-			var id = (lastSelector.match(idStripper) || [])[1],
-				className = (lastSelector.match(classStripper) || [])[1],
-				tagName = (lastSelector.match(tagStripper) || [])[1],
-				attrs = lastSelector.match(attrStripper) || [];
+				elements = [],
+				strippedSelector = stripper(lastSelector),
+				id = strippedSelector.id,
+				className = strippedSelector.className,
+				tagName = strippedSelector.tagName,
+				attrs = strippedSelector.attrs;
 
 			elements = id && find('id', id, context) || [];
 			elements = elements.length ? (className ? filter(elements, className, function(val) {
@@ -113,6 +112,15 @@
         }
 	}
 
+	function stripper(selector) {
+		return {
+			id: (selector.match(idStripper) || [])[1],
+			className: (selector.match(classStripper) || [])[1],
+			tagName: (selector.match(tagStripper) || [])[1],
+			attrs: selector.match(attrStripper) || []
+		}
+	}
+
 	function filter(collection, value, fnTest) {
 		var ret= [];
 		for(var i = 0, len = collection.length; i < len; i++) {
@@ -123,16 +131,17 @@
 		return ret;
 	}
 
-	function filterByParent(selector, elements, dir) {
-		var ps = selector.pop(),
+	function filterByParent(selector, elements, deep) {
+		var s = selector.pop(),
 			ret = [];
-		if(ps === '>') {
+		if(s === '>') {
 			return filterByParent(selector, elements, true);
 		}
-		var id = (ps.match(idStripper) || [])[1],
-			className = (ps.match(classStripper) || [])[1],
-			tagName = (ps.match(tagStripper) || [])[1];
-			attrs = ps.match(attrStripper) || [];
+		var strippedSelector = stripper(s),
+			id = strippedSelector.id,
+			className = strippedSelector.className,
+			tagName = strippedSelector.tagName,
+			attrs = strippedSelector.attrs;
 
 		for(var i = 0, len = elements.length; i < len; i++) {
 			var parent = elements[i].parentNode;
@@ -141,7 +150,7 @@
                 isMatch = isMatch && (!tagName || tagName === parent.nodeName.toLowerCase());
                 isMatch = isMatch && (!className || (RegExp('(^|\\s)' + className + '(\\s|$)').test(parent.className)));
                 isMatch = isMatch && (!attrs.length || parent.getAttribute(attrs[1]) === attrs[2]);
-                if(dir || isMatch) {
+                if(deep || isMatch) {
                 	if(isMatch) {
                 		ret.push(elements[i]);
                 	}
