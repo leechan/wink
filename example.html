@@ -4,8 +4,10 @@
 	<meta charset="UTF-8">
 	<title>Document</title>
 	<script src="wink.js"></script>
+  <script src="qwery.js"></script>
 </head>
-<body>  
+<body>
+    <div>
     <h1>wink selector engine</h1>
   	<ul class="nav">
       <li>
@@ -18,12 +20,13 @@
         <a href="#">menu 3</a>
       </li>
       <li class="active">
-        <a href="#">menu 4</a>
+        <div><a href="#">menu 4</a></div>
       </li>
       <li>
         <a href="#">menu 5</a>
       </li>
     </ul>
+    </div>
 	<script>
     var each = function(callback) {
       for(var i = 0, len = this.length; i < len; i++) {
@@ -31,7 +34,7 @@
       }
     }
     Array.prototype.each = each;
-		var els = wink("body > .nav > li.active");
+		var els = wink("div > .nav > li > a");
     els.each(function() {
       this.style.color = 'red';
     })

@@ -131,12 +131,32 @@
 		return ret;
 	}
 
+	function contain(parent, childs) {
+		var ret = [];
+		for(var i = 0, len = childs.length; i < len; i++) {
+			var p = childs[i];
+			do {				
+				if(p == parent) {
+					ret.push(childs[i]);
+					break;
+				}
+			} while ((p = p.parentNode))
+		}
+		return ret;
+	}
+
 	function filterByParent(selector, elements, deep) {
-		var s = selector.pop(),
-			ret = [];
+		var s = selector.pop(), ret = [], parents = [];
 		if (s === '>') {
-			deep = deep || elements;
-			return filterByParent([selector.pop()], deep, true);
+			var ps = filterByParent(selector, deep || elements, true);
+			var arr = [];
+			for(var b = 0, l = ps.length; b < l; b++) {
+				var childs = contain(ps[b], elements);
+				if(childs.length) {
+					arr = arr.concat(childs);
+				}
+			}
+			return selector.length ? filterByParent(selector, arr, ps) : arr;
 		}
 		var strippedSelector = stripper(s),
 			id = strippedSelector.id,
@@ -152,6 +172,7 @@
 				isMatch = isMatch && (!attrs.length || parent.getAttribute(attrs[1]) === attrs[2]);
 				if (deep || isMatch) {
 					if (isMatch) {
+						parents.push(parent);
 						ret.push(elements[i]);
 					}
 					break;
@@ -159,7 +180,7 @@
 
 			} while ((parent = parent.parentNode))
 		}
-		return selector.length > 0 ? filterByParent(selector, ret) : ret;
+		return selector.length > 0 ? filterByParent(selector, ret, unique(parents)) : ret;
 	}
 
 	function unique(arr) {
