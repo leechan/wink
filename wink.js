@@ -6,13 +6,13 @@
  *    - http://www.opensource.org/licenses/mit-license.php
  *    - http://www.gnu.org/copyleft/gpl.html
  * -------------------------------------------------------
- */;
-(function() {
+ */
+ ;(function() {
 	var simpleSeletor = /^[#\.\w][\w-]+$/,
 		idStripper = /#([\w\-_]+)/,
 		classStripper = /\.([\w\-_]+)/,
 		tagStripper = /^([\w\-_\*]+)/,
-		attrStripper = /\[([\w-]+)=[\"\']?([^\']+)[\"\']?\]$/;
+		attrStripper = /\[([\w-]+)=[\"\']?([^\'\"]+)[\"\']?\]$/;
 
 	function _(selector, context) {
 		if (!selector) return [];
@@ -23,12 +23,13 @@
 			if (simpleSeletor.test(selector)) {
 				var firstChar = selector.charAt(0),
 					type = firstChar === '#' ? 'id' : firstChar === '.' ? 'class' : 'tag';
+					selector = (type === 'id' || type === 'class') ? selector.substring(1) : selector;
 				return find(type, selector, context);
 			}
 
-			// if(context.querySelectorAll) {
-			// 	return toArray(context.querySelectorAll(selector));
-			// }
+			if(context.querySelectorAll) {
+				return toArray(context.querySelectorAll(selector));
+			}
 
 			if (selector.indexOf(',') !== -1) {
 				var selectors = selector.split(','),
@@ -52,11 +53,13 @@
 			elements = elements.length ? (className ? filter(elements, className, function(val) {
 				return this.className === val;
 			}) : elements) : (className ? find('class', className, context) : []);
+
 			elements = elements.length ? (tagName ? filter(elements, tagName, function(val) {
 				return this.nodeName.toLowerCase() === val.toLowerCase();
 			}) : elements) : (tagName ? find('tag', tagName, context) : []);
+
 			elements = elements.length ? (attrs.length ? filter(elements, attrs, function(attrs) {
-				return this.getAttribute(attrs[1]) === attrs[2];
+				return this.getAttribute(attrs[1]) == attrs[2];
 			}) : elements) : (attrs.length ? (filter(find('tag', '*', context), attrs, function(attrs) {
 				return this.getAttribute(attrs[1]) === attrs[2];
 			})) : []);
@@ -64,6 +67,7 @@
 			if (split.length) {
 				return filterByParent(split, elements);
 			}
+
 			return elements;
 		}
 
@@ -130,57 +134,49 @@
 		}
 		return ret;
 	}
-
-	function contain(parent, childs) {
-		var ret = [];
-		for(var i = 0, len = childs.length; i < len; i++) {
-			var p = childs[i];
-			do {				
-				if(p == parent) {
-					ret.push(childs[i]);
-					break;
-				}
-			} while ((p = p.parentNode))
-		}
-		return ret;
-	}
-
+	//sometimes deep is parents
 	function filterByParent(selector, elements, deep) {
 		var s = selector.pop(), ret = [], parents = [];
 		if (s === '>') {
-			var ps = filterByParent(selector, deep || elements, true);
-			var arr = [];
-			for(var b = 0, l = ps.length; b < l; b++) {
-				var childs = contain(ps[b], elements);
-				if(childs.length) {
-					arr = arr.concat(childs);
-				}
+			deep = deep || elements;
+			var elemsIndex = filterByParent(selector, deep, true, 'return index of elements');
+			for(var b = 0, l = elemsIndex.length; b < l; b++) {
+				ret.push(elements[elemsIndex[b]]);
+				parents.push(deep[elemsIndex[b]]);
 			}
-			return selector.length ? filterByParent(selector, arr, ps) : arr;
+			return selector.length ? filterByParent(selector, ret, parents) : ret;
 		}
 		var strippedSelector = stripper(s),
 			id = strippedSelector.id,
 			className = strippedSelector.className,
 			tagName = strippedSelector.tagName,
-			attrs = strippedSelector.attrs;
+			attrs = strippedSelector.attrs,
+			returnIndex = arguments.length === 4 ? true : false;
+
 		for (var i = 0, len = elements.length; i < len; i++) {
-			var parent = elements[i].parentNode;
+			var parent = typeof deep === 'object' ? (deep && deep[i]) : elements[i];
+			var parent = parent.parentNode;
 			do {
+				if(!parent) break;
 				var isMatch = !id || (parent.id === id);
-				isMatch = isMatch && (!tagName || tagName === parent.nodeName.toLowerCase());
+				isMatch = isMatch && (!tagName || tagName.toLowerCase() === parent.nodeName.toLowerCase());
 				isMatch = isMatch && (!className || (RegExp('(^|\\s)' + className + '(\\s|$)').test(parent.className)));
 				isMatch = isMatch && (!attrs.length || parent.getAttribute(attrs[1]) === attrs[2]);
-				if (deep || isMatch) {
+				if (deep === true || isMatch) {
 					if (isMatch) {
 						parents.push(parent);
-						ret.push(elements[i]);
+						if(returnIndex) {
+							ret.push(i);
+						} else {
+							ret.push(elements[i]);
+						}
 					}
 					break;
 				}
 
 			} while ((parent = parent.parentNode))
 		}
-		return selector.length > 0 ? filterByParent(selector, ret, unique(parents)) : ret;
+		return selector.length > 0 ? filterByParent(selector, ret, parents) : ret;
 	}
 
 	function unique(arr) {
