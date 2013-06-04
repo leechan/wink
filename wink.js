@@ -12,10 +12,11 @@
 		idStripper = /#([\w\-_]+)/,
 		classStripper = /\.([\w\-_]+)/,
 		tagStripper = /^([\w\-_\*]+)/,
-		attrStripper = /\[([\w-]+)=[\"\']?([^\'\"]+)[\"\']?\]$/;
+		attrStripper = /\[([\w-]+)=[\"\']?([^\'\"]+)[\"\']?\]$/,
+		cache = {};
 
 	function _(selector, context) {
-		if (!selector) return [];
+		if (!selector || typeof selector !== 'string') return [];
 
 		if (typeof selector === 'string') {
 			context = context || document;
@@ -32,8 +33,7 @@
 			}
 
 			if (selector.indexOf(',') !== -1) {
-				var selectors = selector.split(','),
-					ret = [];
+				var selectors = selector.split(','), ret = [];
 				for (var i = 0, len = selectors.length; i < len; i++) {
 					ret = ret.concat(_(selectors[i]));
 				}
@@ -50,13 +50,14 @@
 				attrs = strippedSelector.attrs;
 
 			elements = id && find('id', id, context) || [];
-			elements = elements.length ? (className ? filter(elements, className, function(val) {
-				return this.className === val;
-			}) : elements) : (className ? find('class', className, context) : []);
 
 			elements = elements.length ? (tagName ? filter(elements, tagName, function(val) {
 				return this.nodeName.toLowerCase() === val.toLowerCase();
 			}) : elements) : (tagName ? find('tag', tagName, context) : []);
+
+			elements = elements.length ? (className ? filter(elements, className, function(val) {
+				return this.className === val;
+			}) : elements) : (className ? find('class', className, context) : []);
 
 			elements = elements.length ? (attrs.length ? filter(elements, attrs, function(attrs) {
 				return this.getAttribute(attrs[1]) == attrs[2];
@@ -71,14 +72,14 @@
 			return elements;
 		}
 
-		if (selector.nodeType) {
-			return [selector];
-		}
-
 		return [];
 	}
 
 	function find(type, value, context) {
+		var key = (type === 'id' ? '#' : type === 'class' ? '.' : '') + value;
+		if(cache[key]) {
+			return cache[key];
+		}
 		var found = [];
 		switch (type) {
 			case 'id':
@@ -101,7 +102,7 @@
 			case 'tag':
 				found = toArray(context.getElementsByTagName(value));
 		}
-		return found;
+		return (cache[key] = found);
 	}
 
 	function toArray(c) {
@@ -192,5 +193,12 @@
 		return ret;
 	}
 
+	if(!document.querySelectorAll) {
+		var addEvent = document.addEventListener || document.attachEvent;
+		function clearCache(){ cache = {}; alert('clear');}
+		addEvent("DOMAttrModified", clearCache, false);
+		addEvent("DOMNodeInserted", clearCache, false);
+		addEvent("DOMNodeRemoved", clearCache, false);
+	}
 	this.wink = _;
 })()
