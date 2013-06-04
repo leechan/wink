@@ -12,8 +12,7 @@
 		idStripper = /#([\w\-_]+)/,
 		classStripper = /\.([\w\-_]+)/,
 		tagStripper = /^([\w\-_\*]+)/,
-		attrStripper = /\[([\w-]+)=[\"\']?([^\'\"]+)[\"\']?\]$/,
-		cache = {};
+		attrStripper = /\[([\w-]+)=[\"\']?([^\'\"]+)[\"\']?\]$/;
 
 	function _(selector, context) {
 		if (!selector || typeof selector !== 'string') return [];
@@ -77,9 +76,6 @@
 
 	function find(type, value, context) {
 		var key = (type === 'id' ? '#' : type === 'class' ? '.' : '') + value;
-		if(cache[key]) {
-			return cache[key];
-		}
 		var found = [];
 		switch (type) {
 			case 'id':
@@ -102,7 +98,7 @@
 			case 'tag':
 				found = toArray(context.getElementsByTagName(value));
 		}
-		return (cache[key] = found);
+		return found;
 	}
 
 	function toArray(c) {
@@ -194,12 +190,5 @@
 		return ret;
 	}
 
-	if(!document.querySelectorAll) {
-		var addEvent = document.addEventListener || document.attachEvent;
-		function clearCache(){ cache = {}; alert('clear');}
-		addEvent("DOMAttrModified", clearCache, false);
-		addEvent("DOMNodeInserted", clearCache, false);
-		addEvent("DOMNodeRemoved", clearCache, false);
-	}
 	this.wink = _;
 })()
